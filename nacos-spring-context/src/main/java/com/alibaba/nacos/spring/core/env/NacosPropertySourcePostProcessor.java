@@ -147,7 +147,15 @@ public class NacosPropertySourcePostProcessor implements BeanDefinitionRegistryP
         return Collections.emptyList();
     }
 
-    private void addNacosPropertySource(NacosPropertySource nacosPropertySource) {
+    protected void publishEvent(NacosPropertySource nacosPropertySource, BeanDefinition beanDefinition) {
+        for (AbstractNacosPropertySourceBuilder builder : nacosPropertySourceBuilders) {
+            if (builder.supports(beanDefinition)) {
+                builder.publishMetadataEvent(nacosPropertySource, beanDefinition);
+            }
+        }
+    }
+
+    protected void addNacosPropertySource(NacosPropertySource nacosPropertySource) {
 
         MutablePropertySources propertySources = environment.getPropertySources();
 

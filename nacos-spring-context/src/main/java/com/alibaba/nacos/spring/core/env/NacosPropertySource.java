@@ -58,6 +58,10 @@ public class NacosPropertySource extends PropertiesPropertySource {
 
     private Class<?> beanType;
 
+    public NacosPropertySource(String name, Properties source) {
+        super(name, source);
+    }
+
     /**
      * @param name        the name of Nacos {@link PropertySource}
      * @param nacosConfig the Nacos Config with {@link Properties} format

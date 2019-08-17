@@ -17,6 +17,7 @@
 package com.alibaba.nacos.spring.context.annotation.config;
 
 import com.alibaba.nacos.spring.factory.NacosServiceFactory;
+import com.alibaba.nacos.spring.util.NacosUtils;
 import com.alibaba.nacos.spring.util.config.NacosConfigLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ import static com.alibaba.nacos.spring.util.NacosBeanUtils.getNacosServiceFactor
 import static com.alibaba.nacos.spring.util.NacosUtils.buildDefaultPropertySourceName;
 import static com.alibaba.nacos.spring.util.NacosUtils.toProperties;
 import static java.lang.String.format;
+import static org.springframework.util.ClassUtils.resolveClassName;
 
 /**
  * Nacos {@link PropertySource} Builder
@@ -40,7 +42,7 @@ import static java.lang.String.format;
  * @see NacosPropertySource
  * @since 0.1.0
  */
-class NacosPropertySourceBuilder {
+public class NacosPropertySourceBuilder {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -52,13 +54,21 @@ class NacosPropertySourceBuilder {
 
     private String type;
 
-    private Properties properties;
+    private String beanName;
+
+    private String beanClassName;
+
+    private boolean autoRefresh;
+
+    private Properties nacosProperties;
 
     private ConfigurableEnvironment environment;
 
     private BeanFactory beanFactory;
 
     private NacosConfigLoader nacosConfigLoader;
+
+    private ClassLoader classLoader;
 
     public NacosPropertySourceBuilder name(String name) {
         this.name = name;
@@ -76,12 +86,32 @@ class NacosPropertySourceBuilder {
     }
 
     public NacosPropertySourceBuilder properties(Properties properties) {
-        this.properties = properties;
+        this.nacosProperties = properties;
         return this;
     }
 
     public NacosPropertySourceBuilder type(String type) {
         this.type = type;
+        return this;
+    }
+
+    public NacosPropertySourceBuilder beanName(String beanName) {
+        this.beanName = beanName;
+        return this;
+    }
+
+    public NacosPropertySourceBuilder beanClassName(String beanClassName) {
+        this.beanClassName = beanClassName;
+        return this;
+    }
+
+    public NacosPropertySourceBuilder classLoader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+        return this;
+    }
+
+    public NacosPropertySourceBuilder autoRefresh(boolean autoRefresh) {
+        this.autoRefresh = autoRefresh;
         return this;
     }
 
@@ -100,7 +130,7 @@ class NacosPropertySourceBuilder {
      *
      * @return if Nacos config is absent , return <code>null</code>
      */
-    public PropertySource build() {
+    public com.alibaba.nacos.spring.core.env.NacosPropertySource build() {
 
         nacosConfigLoader = new NacosConfigLoader(environment);
 
@@ -108,25 +138,38 @@ class NacosPropertySourceBuilder {
 
         nacosConfigLoader.setNacosServiceFactory(nacosServiceFactory);
 
-        String config = nacosConfigLoader.load(dataId, groupId, properties);
+        dataId = NacosUtils.readFromEnvironment(dataId, environment);
+        groupId = NacosUtils.readFromEnvironment(groupId, environment);
+        type = StringUtils.isEmpty(NacosUtils.readTypeFromDataId(dataId)) ? type : NacosUtils.readTypeFromDataId(dataId);
+
+        String config = nacosConfigLoader.load(dataId, groupId, nacosProperties);
 
         if (!StringUtils.hasText(config)) {
             if (logger.isWarnEnabled()) {
                 logger.warn(format("There is no content for Nacos PropertySource from dataId[%s] , groupId[%s] , properties[%s].",
                         dataId,
                         groupId,
-                        properties));
+                        nacosProperties));
             }
             return null;
         }
 
-        Properties properties = toProperties(dataId, groupId, config, type);
+        Properties configProperties = toProperties(dataId, groupId, config, type);
 
         if (!StringUtils.hasText(name)) {
-            name = buildDefaultPropertySourceName(dataId, groupId, properties);
+            name = buildDefaultPropertySourceName(dataId, groupId, nacosProperties);
         }
 
-        return new PropertiesPropertySource(name, properties);
+        com.alibaba.nacos.spring.core.env.NacosPropertySource propertySource =
+                new com.alibaba.nacos.spring.core.env.NacosPropertySource(name, configProperties);
+        propertySource.setAutoRefreshed(autoRefresh);
+        propertySource.setBeanName(beanName);
+
+        if (StringUtils.hasText(beanClassName)) {
+            propertySource.setBeanType(resolveClassName(beanClassName, classLoader));
+        }
+
+        return propertySource;
     }
 
     public NacosConfigLoader getNacosConfigLoader() {

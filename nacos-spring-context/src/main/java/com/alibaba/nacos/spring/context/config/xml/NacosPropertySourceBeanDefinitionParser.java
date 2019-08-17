@@ -26,6 +26,7 @@ import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
+import static com.alibaba.nacos.spring.util.NacosBeanUtils.registerMultiNacosPropertySourcePostProcessor;
 import static com.alibaba.nacos.spring.util.NacosBeanUtils.registerNacosPropertySourcePostProcessor;
 import static com.alibaba.nacos.spring.util.NacosBeanUtils.registerXmlNacosPropertySourceBuilder;
 
@@ -48,6 +49,7 @@ public class NacosPropertySourceBeanDefinitionParser extends AbstractBeanDefinit
         // Register Dependent Beans
         registerNacosPropertySourcePostProcessor(registry);
         registerXmlNacosPropertySourceBuilder(registry);
+        registerMultiNacosPropertySourcePostProcessor(registry);
 
         NacosPropertySourceXmlBeanDefinition beanDefinition = new NacosPropertySourceXmlBeanDefinition();
         beanDefinition.setElement(element);

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.spring.core.env;
 
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.spring.context.annotation.config.NacosPropertySourceBuilder;
 import com.alibaba.nacos.spring.context.event.DeferredApplicationEventPublisher;
 import com.alibaba.nacos.spring.context.event.config.NacosConfigMetadataEvent;
 import com.alibaba.nacos.spring.util.NacosUtils;
@@ -99,17 +100,9 @@ public abstract class AbstractNacosPropertySourceBuilder<T extends BeanDefinitio
         for (int i = 0; i < size; i++) {
             Map<String, Object> attributes = attributesArray[i];
             if (!CollectionUtils.isEmpty(attributes)) {
-
                 NacosPropertySource nacosPropertySource = doBuild(beanName, beanDefinition, attributesArray[i]);
-
-                NacosConfigMetadataEvent metadataEvent = createMetaEvent(nacosPropertySource, beanDefinition);
-
-                initMetadataEvent(nacosPropertySource, beanDefinition, metadataEvent);
-
-                publishMetadataEvent(metadataEvent);
-
+                publishMetadataEvent(nacosPropertySource, beanDefinition);
                 nacosPropertySources.add(nacosPropertySource);
-
             }
         }
 
@@ -131,7 +124,9 @@ public abstract class AbstractNacosPropertySourceBuilder<T extends BeanDefinitio
         doInitMetadataEvent(nacosPropertySource, beanDefinition, metadataEvent);
     }
 
-    private void publishMetadataEvent(NacosConfigMetadataEvent metadataEvent) {
+    protected void publishMetadataEvent(NacosPropertySource nacosPropertySource, T beanDefinition) {
+        NacosConfigMetadataEvent metadataEvent = createMetaEvent(nacosPropertySource, beanDefinition);
+        initMetadataEvent(nacosPropertySource, beanDefinition, metadataEvent);
         applicationEventPublisher.publishEvent(metadataEvent);
     }
 
@@ -139,7 +134,7 @@ public abstract class AbstractNacosPropertySourceBuilder<T extends BeanDefinitio
     protected abstract void doInitMetadataEvent(NacosPropertySource nacosPropertySource, T beanDefinition,
                                                 NacosConfigMetadataEvent metadataEvent);
 
-
+    @SuppressWarnings("all")
     protected NacosPropertySource doBuild(String beanName, T beanDefinition, Map<String, Object> runtimeAttributes) {
 
         // Get annotation metadata
@@ -155,36 +150,21 @@ public abstract class AbstractNacosPropertySourceBuilder<T extends BeanDefinitio
 
         Properties nacosProperties = resolveProperties(nacosPropertiesAttributes, environment, globalNacosProperties);
 
-        String nacosConfig = nacosConfigLoader.load(dataId, groupId, nacosProperties);
+        NacosPropertySource propertySource = new NacosPropertySourceBuilder()
+                .name(name)
+                .dataId(dataId)
+                .groupId(groupId)
+                .type(type)
+                .properties(nacosProperties)
+                .beanFactory(beanFactory)
+                .beanName(beanName)
+                .beanClassName(beanDefinition.getBeanClassName())
+                .classLoader(classLoader)
+                .build();
 
-        if (!StringUtils.hasText(nacosConfig)) {
-            if (logger.isWarnEnabled()) {
-                logger.warn(format("There is no content for NacosPropertySource from dataId[%s] , groupId[%s] , properties[%s].",
-                        dataId,
-                        groupId,
-                        valueOf(nacosPropertiesAttributes)));
-            }
-        }
+        initNacosPropertySource(propertySource, beanDefinition, runtimeAttributes);
 
-        if (!StringUtils.hasText(name)) {
-            name = buildDefaultPropertySourceName(dataId, groupId, nacosProperties);
-        }
-
-        NacosPropertySource nacosPropertySource = new NacosPropertySource(dataId, groupId, name, nacosConfig, type);
-
-        nacosPropertySource.setBeanName(beanName);
-
-        String beanClassName = beanDefinition.getBeanClassName();
-        if (StringUtils.hasText(beanClassName)) {
-            nacosPropertySource.setBeanType(resolveClassName(beanClassName, classLoader));
-        }
-        nacosPropertySource.setGroupId(groupId);
-        nacosPropertySource.setDataId(dataId);
-        nacosPropertySource.setProperties(nacosProperties);
-
-        initNacosPropertySource(nacosPropertySource, beanDefinition, runtimeAttributes);
-
-        return nacosPropertySource;
+        return propertySource;
 
     }
 

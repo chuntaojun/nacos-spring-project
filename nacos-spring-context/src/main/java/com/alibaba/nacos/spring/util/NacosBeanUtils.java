@@ -25,6 +25,7 @@ import com.alibaba.nacos.spring.context.annotation.config.NacosValueAnnotationBe
 import com.alibaba.nacos.spring.context.event.LoggingNacosConfigMetadataEventListener;
 import com.alibaba.nacos.spring.context.properties.config.NacosConfigurationPropertiesBindingPostProcessor;
 import com.alibaba.nacos.spring.core.env.AnnotationNacosPropertySourceBuilder;
+import com.alibaba.nacos.spring.core.env.MultiNacosPropertySourcePostProcessor;
 import com.alibaba.nacos.spring.core.env.NacosPropertySourcePostProcessor;
 import com.alibaba.nacos.spring.core.env.XmlNacosPropertySourceBuilder;
 import com.alibaba.nacos.spring.factory.ApplicationContextHolder;
@@ -257,6 +258,11 @@ public abstract class NacosBeanUtils {
                 NacosPropertySourcePostProcessor.class);
     }
 
+    public static void registerMultiNacosPropertySourcePostProcessor(BeanDefinitionRegistry registry) {
+        registerInfrastructureBeanIfAbsent(registry, MultiNacosPropertySourcePostProcessor.BEAN_NAME,
+                MultiNacosPropertySourcePostProcessor.class);
+    }
+
     public static void registerAnnotationNacosPropertySourceBuilder(BeanDefinitionRegistry registry) {
         registerInfrastructureBeanIfAbsent(registry, AnnotationNacosPropertySourceBuilder.BEAN_NAME,
                 AnnotationNacosPropertySourceBuilder.class);
@@ -348,6 +354,12 @@ public abstract class NacosBeanUtils {
     public static void invokeNacosPropertySourcePostProcessor(BeanFactory beanFactory) {
         NacosPropertySourcePostProcessor postProcessor =
                 beanFactory.getBean(NacosPropertySourcePostProcessor.BEAN_NAME, NacosPropertySourcePostProcessor.class);
+        postProcessor.postProcessBeanFactory((ConfigurableListableBeanFactory) beanFactory);
+    }
+
+    public static void invokeMultiNacosPropertySourcePostProcessor(BeanFactory beanFactory) {
+        MultiNacosPropertySourcePostProcessor postProcessor =
+                beanFactory.getBean(MultiNacosPropertySourcePostProcessor.BEAN_NAME, MultiNacosPropertySourcePostProcessor.class);
         postProcessor.postProcessBeanFactory((ConfigurableListableBeanFactory) beanFactory);
     }
 

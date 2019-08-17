@@ -30,6 +30,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotationMetadata;
 
 import static com.alibaba.nacos.spring.util.NacosBeanUtils.GLOBAL_NACOS_PROPERTIES_BEAN_NAME;
+import static com.alibaba.nacos.spring.util.NacosBeanUtils.invokeMultiNacosPropertySourcePostProcessor;
 import static com.alibaba.nacos.spring.util.NacosBeanUtils.invokeNacosPropertySourcePostProcessor;
 import static com.alibaba.nacos.spring.util.NacosBeanUtils.registerGlobalNacosProperties;
 import static com.alibaba.nacos.spring.util.NacosBeanUtils.registerNacosCommonBeans;
@@ -65,6 +66,7 @@ public class NacosBeanDefinitionRegistrar implements ImportBeanDefinitionRegistr
         // Invoke NacosPropertySourcePostProcessor immediately
         // in order to enhance the precedence of @NacosPropertySource process
         invokeNacosPropertySourcePostProcessor(beanFactory);
+        invokeMultiNacosPropertySourcePostProcessor(beanFactory);
     }
 
     @Override
