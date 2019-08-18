@@ -335,6 +335,8 @@ public abstract class NacosBeanUtils {
 
         registerNacosPropertySourcePostProcessor(registry);
 
+        registerMultiNacosPropertySourcePostProcessor(registry);
+
         registerAnnotationNacosPropertySourceBuilder(registry);
 
         registerNacosConfigListenerExecutor(registry, environment);

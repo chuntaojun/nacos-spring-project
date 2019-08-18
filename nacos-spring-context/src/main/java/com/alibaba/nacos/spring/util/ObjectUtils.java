@@ -53,34 +53,4 @@ public abstract class ObjectUtils {
         });
     }
 
-    public static Map<String, Object>[] resolveRuntimeAttributesArray(AnnotatedBeanDefinition beanDefinition) {
-        // Get AnnotationMetadata
-        AnnotationMetadata metadata = beanDefinition.getMetadata();
-
-        Set<String> annotationTypes = metadata.getAnnotationTypes();
-
-        List<Map<String, Object>> annotationAttributesList = new LinkedList<Map<String, Object>>();
-
-        for (String annotationType : annotationTypes) {
-            annotationAttributesList.addAll(getAnnotationAttributesList(metadata, annotationType));
-        }
-
-        return annotationAttributesList.toArray(new Map[0]);
-    }
-
-    private static List<Map<String, Object>> getAnnotationAttributesList(AnnotationMetadata metadata, String annotationType) {
-
-        List<Map<String, Object>> annotationAttributesList = new LinkedList<Map<String, Object>>();
-
-        if (NacosPropertySources.class.getName().equals(annotationType)) {
-            Map<String, Object> annotationAttributes = metadata.getAnnotationAttributes(annotationType);
-            if (annotationAttributes != null) {
-                annotationAttributesList.addAll(Arrays.asList((Map<String, Object>[]) annotationAttributes.get("value")));
-            }
-        } else if (com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.class.getName().equals(annotationType)) {
-            annotationAttributesList.add(metadata.getAnnotationAttributes(annotationType));
-        }
-        return annotationAttributesList;
-    }
-
 }

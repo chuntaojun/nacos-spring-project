@@ -39,15 +39,16 @@ import static com.alibaba.nacos.spring.util.NacosUtils.DEFAULT_BOOLEAN_ATTRIBUTE
 @Documented
 public @interface MultiNacosPropertySource {
 
-    /**
-     * The attribute name of {@link NacosPropertySource#groupId()}
-     */
-    String GROUP_ID_ATTRIBUTE_NAME = "groupId";
 
     /**
      * The attribute name of {@link NacosPropertySource#dataId()}
      */
-    String DATA_IDS_ATTRIBUTE_NAME = "dataId";
+    String DATA_IDS_ATTRIBUTE_NAME = "dataIds";
+
+    /**
+     * The attribute name of {@link NacosPropertySource#groupId()}
+     */
+    String GROUP_ID_ATTRIBUTE_NAME = "groupId";
 
     /**
      * The attribute name of {@link NacosPropertySource#autoRefreshed()}
@@ -65,18 +66,18 @@ public @interface MultiNacosPropertySource {
     String CONFIG_TYPE_ATTRIBUTE_NAME = "type";
 
     /**
-     * Nacos Group ID
-     *
-     * @return default value {@link Constants#DEFAULT_GROUP};
-     */
-    String groupId() default DEFAULT_GROUP;
-
-    /**
      * Nacos Data ID
      *
      * @return required value.
      */
     String[] dataIds();
+
+    /**
+     * Nacos Group ID
+     *
+     * @return default value {@link Constants#DEFAULT_GROUP};
+     */
+    String groupId() default DEFAULT_GROUP;
 
     /**
      * It indicates the property source is auto-refreshed when Nacos configuration is changed.
@@ -86,7 +87,11 @@ public @interface MultiNacosPropertySource {
     boolean autoRefreshed() default DEFAULT_BOOLEAN_ATTRIBUTE_VALUE;
 
     /**
-     * The type of config
+     * The type of config,
+     * The default configuration information for all data - id
+     * If data - id carry the configuration file information is
+     * given priority to with data - id configuration information
+     * to carry
      *
      * @return the type of config
      */

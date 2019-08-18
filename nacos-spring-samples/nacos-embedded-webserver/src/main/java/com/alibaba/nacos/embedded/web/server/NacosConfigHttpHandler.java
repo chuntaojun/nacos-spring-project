@@ -227,9 +227,7 @@ public class NacosConfigHttpHandler implements HttpHandler {
 
     public void cacheConfig(Map<String, String> params) {
         String content = params.get(CONTENT_PARAM_NAME);
-
         String key = createContentKey(params);
-
         contentCache.put(key, content);
     }
 

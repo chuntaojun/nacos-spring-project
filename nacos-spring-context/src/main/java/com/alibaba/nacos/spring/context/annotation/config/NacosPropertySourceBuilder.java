@@ -70,6 +70,13 @@ public class NacosPropertySourceBuilder {
 
     private ClassLoader classLoader;
 
+    private NacosPropertySourceBuilder() {
+    }
+
+    public static NacosPropertySourceBuilder newInstance() {
+        return new NacosPropertySourceBuilder();
+    }
+
     public NacosPropertySourceBuilder name(String name) {
         this.name = name;
         return this;
@@ -154,14 +161,12 @@ public class NacosPropertySourceBuilder {
             return null;
         }
 
-        Properties configProperties = toProperties(dataId, groupId, config, type);
-
         if (!StringUtils.hasText(name)) {
             name = buildDefaultPropertySourceName(dataId, groupId, nacosProperties);
         }
 
         com.alibaba.nacos.spring.core.env.NacosPropertySource propertySource =
-                new com.alibaba.nacos.spring.core.env.NacosPropertySource(name, configProperties);
+                new com.alibaba.nacos.spring.core.env.NacosPropertySource(dataId, groupId, name, config, type);
         propertySource.setAutoRefreshed(autoRefresh);
         propertySource.setBeanName(beanName);
 

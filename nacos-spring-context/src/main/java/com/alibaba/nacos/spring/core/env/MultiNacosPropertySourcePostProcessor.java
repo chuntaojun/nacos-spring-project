@@ -18,9 +18,11 @@ package com.alibaba.nacos.spring.core.env;
 
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.spring.beans.factory.annotation.ConfigServiceBeanBuilder;
+import com.alibaba.nacos.spring.context.annotation.config.MultiNacosPropertySource;
 import com.alibaba.nacos.spring.context.annotation.config.NacosPropertySourceBuilder;
+import com.alibaba.nacos.spring.util.AnnotationUtils;
+import com.alibaba.nacos.spring.util.Compute;
 import com.alibaba.nacos.spring.util.NacosUtils;
-import com.alibaba.nacos.spring.util.ObjectUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
@@ -34,6 +36,7 @@ import org.springframework.context.annotation.ConfigurationClassPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -99,7 +102,7 @@ public class MultiNacosPropertySourcePostProcessor implements BeanDefinitionRegi
             return;
         }
         BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanName);
-        if (beanDefinition.getClass().isAssignableFrom(AnnotatedBeanDefinition.class)) {
+        if (AnnotatedBeanDefinition.class.isAssignableFrom(beanDefinition.getClass())) {
             List<NacosPropertySource> propertySources = buildNacosPropertySources(beanName, (AnnotatedBeanDefinition) beanDefinition);
             // Add Orderly
             for (NacosPropertySource nacosPropertySource : propertySources) {
@@ -113,7 +116,15 @@ public class MultiNacosPropertySourcePostProcessor implements BeanDefinitionRegi
 
     @SuppressWarnings("all")
     private List<NacosPropertySource> buildNacosPropertySources(String beanName, AnnotatedBeanDefinition beanDefinition) {
-        Map<String, Object>[] attributesArray = ObjectUtils.resolveRuntimeAttributesArray(beanDefinition);
+        Map<String, Object>[] attributesArray = AnnotationUtils.resolveRuntimeAttributesArray(beanDefinition, new Compute() {
+            @Override
+            public Map<String, Object>[] apply(AnnotationMetadata metadata, String annotationType) {
+                if (MultiNacosPropertySource.class.getName().equals(annotationType)) {
+                    return new Map[]{metadata.getAnnotationAttributes(annotationType)};
+                }
+                return new Map[0];
+            }
+        });
         int size = attributesArray == null ? 0 : attributesArray.length;
 
         if (size == 0) {
@@ -133,17 +144,22 @@ public class MultiNacosPropertySourcePostProcessor implements BeanDefinitionRegi
                     final String dataId = NacosUtils.readFromEnvironment(element, environment);
                     Map<String, Object> nacosPropertiesAttributes = (Map<String, Object>) attributes.get(PROPERTIES_ATTRIBUTE_NAME);
                     Properties nacosProperties = resolveProperties(nacosPropertiesAttributes, environment, CONFIG.getMergedGlobalProperties(beanFactory));
-                    NacosPropertySource propertySource = new NacosPropertySourceBuilder()
+                    NacosPropertySource propertySource = NacosPropertySourceBuilder.newInstance()
                             .dataId(dataId)
                             .groupId(groupId)
                             .type(type)
                             .properties(nacosProperties)
                             .beanFactory(beanFactory)
                             .beanName(beanName)
+                            .environment(environment)
                             .autoRefresh(autoRefreshed)
                             .build();
-                    postProcessor.publishEvent(propertySource, beanDefinition);
-                    nacosPropertySources.add(propertySource);
+                    if (propertySource != null) {
+                        propertySource.setBefore("");
+                        propertySource.setAfter("");
+                        postProcessor.publishEvent(propertySource, beanDefinition);
+                        nacosPropertySources.add(propertySource);
+                    }
                 }
             }
         }

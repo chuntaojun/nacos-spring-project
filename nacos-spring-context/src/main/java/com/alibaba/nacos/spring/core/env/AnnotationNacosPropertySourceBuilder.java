@@ -18,6 +18,8 @@ package com.alibaba.nacos.spring.core.env;
 
 import com.alibaba.nacos.spring.context.annotation.config.NacosPropertySources;
 import com.alibaba.nacos.spring.context.event.config.NacosConfigMetadataEvent;
+import com.alibaba.nacos.spring.util.AnnotationUtils;
+import com.alibaba.nacos.spring.util.Compute;
 import com.alibaba.nacos.spring.util.ObjectUtils;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.core.type.AnnotationMetadata;
@@ -45,7 +47,20 @@ public class AnnotationNacosPropertySourceBuilder extends AbstractNacosPropertyS
     @Override
     protected Map<String, Object>[] resolveRuntimeAttributesArray(AnnotatedBeanDefinition beanDefinition, Properties globalNacosProperties) {
         // Get AnnotationMetadata
-        return ObjectUtils.resolveRuntimeAttributesArray(beanDefinition);
+        return AnnotationUtils.resolveRuntimeAttributesArray(beanDefinition, new Compute() {
+            @Override
+            public Map<String, Object>[] apply(AnnotationMetadata metadata, String annotationType) {
+                if (NacosPropertySources.class.getName().equals(annotationType)) {
+                    Map<String, Object> annotationAttributes = metadata.getAnnotationAttributes(annotationType);
+                    if (annotationAttributes != null) {
+                        return (Map<String, Object>[]) annotationAttributes.get("value");
+                    }
+                } else if (com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.class.getName().equals(annotationType)) {
+                    return new Map[]{metadata.getAnnotationAttributes(annotationType)};
+                }
+                return new Map[0];
+            }
+        });
     }
 
     @Override

@@ -68,6 +68,8 @@ public class NacosPropertySource extends PropertiesPropertySource {
      */
     public NacosPropertySource(String dataId, String groupId, String name, String nacosConfig, String type) {
         super(name, toProperties(dataId, groupId, nacosConfig, type));
+        this.dataId = dataId;
+        this.groupId = groupId;
         this.type = type;
     }
 

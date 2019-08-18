@@ -101,8 +101,10 @@ public abstract class AbstractNacosPropertySourceBuilder<T extends BeanDefinitio
             Map<String, Object> attributes = attributesArray[i];
             if (!CollectionUtils.isEmpty(attributes)) {
                 NacosPropertySource nacosPropertySource = doBuild(beanName, beanDefinition, attributesArray[i]);
-                publishMetadataEvent(nacosPropertySource, beanDefinition);
-                nacosPropertySources.add(nacosPropertySource);
+                if (nacosPropertySource != null) {
+                    publishMetadataEvent(nacosPropertySource, beanDefinition);
+                    nacosPropertySources.add(nacosPropertySource);
+                }
             }
         }
 
@@ -150,7 +152,7 @@ public abstract class AbstractNacosPropertySourceBuilder<T extends BeanDefinitio
 
         Properties nacosProperties = resolveProperties(nacosPropertiesAttributes, environment, globalNacosProperties);
 
-        NacosPropertySource propertySource = new NacosPropertySourceBuilder()
+        NacosPropertySource propertySource = NacosPropertySourceBuilder.newInstance()
                 .name(name)
                 .dataId(dataId)
                 .groupId(groupId)
@@ -158,12 +160,14 @@ public abstract class AbstractNacosPropertySourceBuilder<T extends BeanDefinitio
                 .properties(nacosProperties)
                 .beanFactory(beanFactory)
                 .beanName(beanName)
+                .environment(environment)
                 .beanClassName(beanDefinition.getBeanClassName())
                 .classLoader(classLoader)
                 .build();
 
-        initNacosPropertySource(propertySource, beanDefinition, runtimeAttributes);
-
+        if (propertySource != null) {
+            initNacosPropertySource(propertySource, beanDefinition, runtimeAttributes);
+        }
         return propertySource;
 
     }
